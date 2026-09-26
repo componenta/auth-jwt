@@ -19,6 +19,7 @@ final readonly class RefreshToken implements \JsonSerializable
         public string $familyId,
         public AuthenticationEvidence $evidence,
         public int $expiresAt,
+        public int $familyExpiresAt,
         public ?int $revokedAt = null,
     ) {
         if (!self::validIdentifier($this->id)) {
@@ -31,9 +32,12 @@ final readonly class RefreshToken implements \JsonSerializable
             );
         }
 
-        if ($this->expiresAt < 1) {
+        if (
+            $this->expiresAt < 1
+            || $this->familyExpiresAt < $this->expiresAt
+        ) {
             throw new \InvalidArgumentException(
-                'Refresh token expiry must be positive.',
+                'Refresh token expiry must be positive and bounded by its family.',
             );
         }
 
@@ -46,7 +50,7 @@ final readonly class RefreshToken implements \JsonSerializable
         $this->revoked = $this->revokedAt !== null;
     }
 
-    /** @return array{id: string, subjectId: string, familyId: string, evidence: array{methods: non-empty-list<string>, capabilities: list<string>}, expiresAt: int, revokedAt: int|null, revoked: bool} */
+    /** @return array{id: string, subjectId: string, familyId: string, evidence: array{methods: non-empty-list<string>, capabilities: list<string>}, expiresAt: int, familyExpiresAt: int, revokedAt: int|null, revoked: bool} */
     public function __debugInfo(): array
     {
         return [
@@ -55,6 +59,7 @@ final readonly class RefreshToken implements \JsonSerializable
             'familyId' => '[REDACTED]',
             'evidence' => $this->evidence->__debugInfo(),
             'expiresAt' => $this->expiresAt,
+            'familyExpiresAt' => $this->familyExpiresAt,
             'revokedAt' => $this->revokedAt,
             'revoked' => $this->revoked,
         ];

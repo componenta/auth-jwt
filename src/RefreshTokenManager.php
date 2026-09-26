@@ -26,12 +26,14 @@ final readonly class RefreshTokenManager
         UuidInterface $subjectId,
         AuthenticationEvidence $evidence,
     ): RefreshToken {
+        $now = $this->now();
         $token = new RefreshToken(
             id: $this->generator->generate(),
             subjectId: $subjectId,
             familyId: $this->generator->generate(),
             evidence: $evidence,
-            expiresAt: $this->now() + $this->config->refreshTtl,
+            expiresAt: $now + $this->config->refreshTtl,
+            familyExpiresAt: $now + $this->config->refreshFamilyTtl,
         );
         $this->store->storeInitial($token);
 
@@ -105,7 +107,8 @@ final readonly class RefreshTokenManager
 
         if (
             !hash_equals($expectedId, $token->id)
-            || $token->expiresAt !== $expectedExpiresAt
+            || $token->expiresAt > $expectedExpiresAt
+            || $token->expiresAt > $token->familyExpiresAt
             || $token->revoked
         ) {
             throw new \LogicException(

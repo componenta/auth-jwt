@@ -47,7 +47,7 @@ final readonly class DatabaseRefreshTokenStore implements RefreshTokenStoreInter
                 ->values([
                     $this->config->familyIdColumn => $token->familyId,
                     $this->config->subjectIdColumn => $token->subjectId->toString(),
-                    $this->config->familyExpiresAtColumn => $token->expiresAt,
+                    $this->config->familyExpiresAtColumn => $token->familyExpiresAt,
                     $this->config->evidenceColumn => self::encodeEvidence(
                         $token->evidence,
                     ),
@@ -117,6 +117,10 @@ final readonly class DatabaseRefreshTokenStore implements RefreshTokenStoreInter
         if (
             self::nullableIntValue($family, $this->config->familyRevokedAtColumn) !== null
             || self::nullableIntValue($family, $this->config->compromisedAtColumn) !== null
+            || self::intValue(
+                $family,
+                $this->config->familyExpiresAtColumn,
+            ) <= $now
         ) {
             return null;
         }
@@ -291,21 +295,14 @@ final readonly class DatabaseRefreshTokenStore implements RefreshTokenStoreInter
                     $this->config->familyExpiresAtColumn,
                 );
 
-                if ($successorExpiresAt > $familyExpiresAt) {
-                    $updatedFamily = $database
-                        ->update($this->config->familyTable)
-                        ->where($this->config->familyIdColumn, $familyId)
-                        ->values([
-                            $this->config->familyExpiresAtColumn => $successorExpiresAt,
-                        ])
-                        ->run();
-
-                    if ($updatedFamily !== 1) {
-                        throw new \UnexpectedValueException(
-                            'Refresh family retention deadline could not be extended.',
-                        );
-                    }
+                if ($familyExpiresAt <= $now) {
+                    return RefreshTokenRotationResult::expired();
                 }
+
+                $actualSuccessorExpiresAt = min(
+                    $successorExpiresAt,
+                    $familyExpiresAt,
+                );
 
                 $database
                     ->insert($this->config->tokenTable)
@@ -315,7 +312,7 @@ final readonly class DatabaseRefreshTokenStore implements RefreshTokenStoreInter
                         ),
                         $this->config->familyIdColumn => $familyId,
                         $this->config->subjectIdColumn => $subjectId->toString(),
-                        $this->config->expiresAtColumn => $successorExpiresAt,
+                        $this->config->expiresAtColumn => $actualSuccessorExpiresAt,
                         $this->config->consumedAtColumn => null,
                         $this->config->revokedAtColumn => null,
                     ])
@@ -331,7 +328,8 @@ final readonly class DatabaseRefreshTokenStore implements RefreshTokenStoreInter
                             $this->config->evidenceColumn,
                         ),
                     ),
-                    expiresAt: $successorExpiresAt,
+                    expiresAt: $actualSuccessorExpiresAt,
+                    familyExpiresAt: $familyExpiresAt,
                 ));
             },
         );

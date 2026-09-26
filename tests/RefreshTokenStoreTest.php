@@ -32,7 +32,8 @@ final class RefreshTokenStoreTest extends TestCase
             subjectId: $subject,
             familyId: str_repeat('b', 64),
             evidence: $evidence,
-            expiresAt: 2000,
+            expiresAt: 1500,
+            familyExpiresAt: 2000,
         );
         $store->storeInitial($initial);
 
@@ -55,6 +56,8 @@ final class RefreshTokenStoreTest extends TestCase
             $evidence->capabilities,
             $rotated->token?->evidence->capabilities,
         );
+        self::assertSame(2000, $rotated->token?->expiresAt);
+        self::assertSame(2000, $rotated->token?->familyExpiresAt);
 
         $replay = $store->rotateAtomically(
             $initial->id,
@@ -69,6 +72,37 @@ final class RefreshTokenStoreTest extends TestCase
         );
         self::assertNull(
             $store->findActiveContext(str_repeat('c', 64), 1003),
+        );
+    }
+
+    public function testExpiredFamilyCannotBeExtendedByRotation(): void
+    {
+        self::requireSqlite();
+        $store = new DatabaseRefreshTokenStore(
+            SqliteDatabaseFixture::create(),
+        );
+        $subject = Uuid::fromString(
+            '018f6d5d-3f7a-7a9b-8c2f-123456789abc',
+        );
+        $initial = new RefreshToken(
+            id: str_repeat('a', 64),
+            subjectId: $subject,
+            familyId: str_repeat('b', 64),
+            evidence: new AuthenticationEvidence(['password']),
+            expiresAt: 1500,
+            familyExpiresAt: 1500,
+        );
+        $store->storeInitial($initial);
+
+        self::assertNull($store->findActiveContext($initial->id, 1500));
+        self::assertSame(
+            RefreshTokenRotationStatus::Expired,
+            $store->rotateAtomically(
+                $initial->id,
+                str_repeat('c', 64),
+                3000,
+                1500,
+            )->status,
         );
     }
 
