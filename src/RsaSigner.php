@@ -239,6 +239,7 @@ final readonly class RsaSigner implements SignerInterface
             ));
         }
 
+        /** @var array<string, mixed> $details */
         return $details;
     }
 
