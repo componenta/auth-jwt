@@ -31,6 +31,19 @@ final readonly class RsaSigner implements SignerInterface
         }
 
         $signer = self::resolveSigner($algorithm);
+        $publicDetails = self::publicKeyDetails($publicKey);
+
+        if ($privateKey !== null) {
+            $privateDetails = self::privateKeyDetails(
+                $privateKey,
+                $passphrase,
+            );
+            self::assertMatchingKeyPair(
+                $publicDetails,
+                $privateDetails,
+            );
+        }
+
         $verificationKey = self::resolveKey($publicKey);
         $signingKey = $privateKey !== null
             ? self::resolveKey($privateKey, $passphrase)
@@ -163,6 +176,96 @@ final readonly class RsaSigner implements SignerInterface
             );
         } catch (\InvalidArgumentException) {
             return null;
+        }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function publicKeyDetails(string $key): array
+    {
+        $resource = @openssl_pkey_get_public($key);
+
+        if (!$resource instanceof \OpenSSLAsymmetricKey) {
+            throw new \InvalidArgumentException(
+                'RSA public key is invalid.',
+            );
+        }
+
+        return self::rsaDetails($resource, 'public');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function privateKeyDetails(
+        #[\SensitiveParameter]
+        string $key,
+        #[\SensitiveParameter]
+        string $passphrase,
+    ): array {
+        $resource = @openssl_pkey_get_private($key, $passphrase);
+
+        if (!$resource instanceof \OpenSSLAsymmetricKey) {
+            throw new \InvalidArgumentException(
+                'RSA private key is invalid or the passphrase is incorrect.',
+            );
+        }
+
+        return self::rsaDetails($resource, 'private');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function rsaDetails(
+        \OpenSSLAsymmetricKey $key,
+        string $kind,
+    ): array {
+        $details = openssl_pkey_get_details($key);
+
+        if (
+            !is_array($details)
+            || ($details['type'] ?? null) !== OPENSSL_KEYTYPE_RSA
+            || !is_int($details['bits'] ?? null)
+            || $details['bits'] < 2048
+            || !is_array($details['rsa'] ?? null)
+            || !is_string($details['rsa']['n'] ?? null)
+            || !is_string($details['rsa']['e'] ?? null)
+        ) {
+            throw new \InvalidArgumentException(sprintf(
+                'RSA %s key must be an RSA key of at least 2048 bits.',
+                $kind,
+            ));
+        }
+
+        return $details;
+    }
+
+    /**
+     * @param array<string, mixed> $public
+     * @param array<string, mixed> $private
+     */
+    private static function assertMatchingKeyPair(
+        array $public,
+        array $private,
+    ): void {
+        $publicRsa = $public['rsa'];
+        $privateRsa = $private['rsa'];
+
+        if (
+            !is_array($publicRsa)
+            || !is_array($privateRsa)
+            || !is_string($publicRsa['n'] ?? null)
+            || !is_string($publicRsa['e'] ?? null)
+            || !is_string($privateRsa['n'] ?? null)
+            || !is_string($privateRsa['e'] ?? null)
+            || !hash_equals($publicRsa['n'], $privateRsa['n'])
+            || !hash_equals($publicRsa['e'], $privateRsa['e'])
+        ) {
+            throw new \InvalidArgumentException(
+                'RSA public and private keys do not form a matching key pair.',
+            );
         }
     }
 
