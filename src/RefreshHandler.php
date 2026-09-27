@@ -16,9 +16,6 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 final readonly class RefreshHandler implements RequestHandlerInterface
 {
-    /** @var list<AuthenticationGuardInterface> */
-    private array $guards;
-
     public function __construct(
         private RefreshTokenManager $refreshTokens,
         private IdentityProviderInterface $identities,
@@ -26,10 +23,8 @@ final readonly class RefreshHandler implements RequestHandlerInterface
         private JwtConfig $config,
         private DeniedResponseFactoryInterface $deniedResponses,
         private ResponseFactoryInterface $responses,
-        AuthenticationGuardInterface ...$guards,
-    ) {
-        $this->guards = array_values($guards);
-    }
+        private AuthenticationGuardInterface $guard,
+    ) {}
 
     #[\Override]
     public function handle(
@@ -73,7 +68,7 @@ final readonly class RefreshHandler implements RequestHandlerInterface
             return $this->invalid();
         }
 
-        $denial = $this->guard($identity, $context->evidence);
+        $denial = $this->guard->check($identity, $context->evidence);
 
         if ($denial !== null) {
             $this->refreshTokens->revoke($tokenId);
@@ -96,46 +91,43 @@ final readonly class RefreshHandler implements RequestHandlerInterface
             );
         }
 
-        if (
-            !$rotated->subjectId->equals($context->subjectId)
-            || $rotated->evidence->methods !== $context->evidence->methods
-            || $rotated->evidence->capabilities
-                !== $context->evidence->capabilities
-        ) {
-            $this->refreshTokens->revoke($rotated->id);
-
-            return $this->invalid();
-        }
-
+        // Every operation after rotation belongs to the compensation scope,
+        // including identity/guard checks and denial-response construction.
         try {
+            if (
+                !$rotated->subjectId->equals($context->subjectId)
+                || $rotated->evidence->methods !== $context->evidence->methods
+                || $rotated->evidence->capabilities
+                    !== $context->evidence->capabilities
+            ) {
+                $this->refreshTokens->revoke($rotated->id);
+
+                return $this->invalid();
+            }
+
             $currentIdentity = $this->identities->findByUuid(
                 $rotated->subjectId,
             );
-        } catch (\Throwable $exception) {
-            $this->refreshTokens->revoke($rotated->id);
-            throw $exception;
-        }
 
-        if (
-            $currentIdentity === null
-            || !$currentIdentity->uuid->equals($rotated->subjectId)
-        ) {
-            $this->refreshTokens->revoke($rotated->id);
+            if (
+                $currentIdentity === null
+                || !$currentIdentity->uuid->equals($rotated->subjectId)
+            ) {
+                $this->refreshTokens->revoke($rotated->id);
 
-            return $this->invalid();
-        }
+                return $this->invalid();
+            }
 
-        $denial = $this->guard($currentIdentity, $rotated->evidence);
+            $denial = $this->guard->check($currentIdentity, $rotated->evidence);
 
-        if ($denial !== null) {
-            $this->refreshTokens->revoke($rotated->id);
+            if ($denial !== null) {
+                $this->refreshTokens->revoke($rotated->id);
 
-            return TokenResponseHeaders::apply(
-                $this->deniedResponses->create($denial),
-            );
-        }
+                return TokenResponseHeaders::apply(
+                    $this->deniedResponses->create($denial),
+                );
+            }
 
-        try {
             $response->getBody()->write(json_encode([
                 'access_token' => $accessToken,
                 'refresh_token' => $rotated->id,
@@ -148,21 +140,6 @@ final readonly class RefreshHandler implements RequestHandlerInterface
             $this->refreshTokens->revoke($rotated->id);
             throw $exception;
         }
-    }
-
-    private function guard(
-        \Componenta\Identity\IdentityInterface $identity,
-        \Componenta\Auth\AuthenticationEvidence $evidence,
-    ): ?DeniedReasonInterface {
-        foreach ($this->guards as $guard) {
-            $denial = $guard->check($identity, $evidence);
-
-            if ($denial !== null) {
-                return $denial;
-            }
-        }
-
-        return null;
     }
 
     private function invalid(): ResponseInterface
