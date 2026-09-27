@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Componenta\Auth\Jwt;
 
+use Componenta\Auth\Http\CredentialResponseHeaders;
 use Psr\Http\Message\ResponseInterface;
 
 final class TokenResponseHeaders
@@ -14,7 +15,7 @@ final class TokenResponseHeaders
         #[\SensitiveParameter]
         ResponseInterface $response,
     ): ResponseInterface {
-        return self::noStore($response)
+        return CredentialResponseHeaders::apply($response)
             ->withHeader('Content-Type', 'application/json');
     }
 
@@ -22,16 +23,7 @@ final class TokenResponseHeaders
         #[\SensitiveParameter]
         ResponseInterface $response,
     ): ResponseInterface {
-        return self::noStore($response)
+        return CredentialResponseHeaders::apply($response)
             ->withoutHeader('Content-Type');
-    }
-
-    private static function noStore(
-        #[\SensitiveParameter]
-        ResponseInterface $response,
-    ): ResponseInterface {
-        return $response
-            ->withHeader('Cache-Control', 'no-store')
-            ->withHeader('Pragma', 'no-cache');
     }
 }

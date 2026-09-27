@@ -4,10 +4,10 @@
     "type": "library",
     "license": "MIT",
     "require": {
-        "componenta/auth": "dev-auth-3",
-        "componenta/auth-http": "dev-main",
+        "componenta/auth": "^3.0",
+        "componenta/auth-http": "^1.0",
         "componenta/clock": "^1.1.0",
-        "componenta/identity": "^1.0",
+        "componenta/identity": "^1.0.1",
         "cycle/database": "^2.22",
         "ext-openssl": "*",
         "lcobucci/jwt": "^5.5",
@@ -42,7 +42,7 @@
             "url": "https://github.com/componenta/auth-http.git"
         }
     ],
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "prefer-stable": true,
     "extra": {
         "branch-alias": {
