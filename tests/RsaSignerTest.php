@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Componenta\Auth\Jwt\Tests;
 
+use Componenta\Auth\Jwt\Claims;
 use Componenta\Auth\Jwt\RsaSigner;
 use PHPUnit\Framework\TestCase;
 
@@ -36,6 +37,18 @@ final class RsaSignerTest extends TestCase
             RsaSigner::class,
             new RsaSigner($public, $private),
         );
+    }
+
+    public function testNumericClaimNamesRoundTripThroughRsa(): void
+    {
+        [$public, $private] = self::keyPair(2048);
+        $signer = new RsaSigner($public, $private);
+        $claims = new Claims('subject', 1000, 1100, 'issuer', 'audience', custom: ['42' => 'value']);
+
+        $parsed = $signer->parse($signer->sign($claims));
+
+        self::assertNotNull($parsed);
+        self::assertSame('value', $parsed->custom['42']);
     }
 
     /** @return array{non-empty-string, non-empty-string} */

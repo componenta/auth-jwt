@@ -14,8 +14,8 @@ final class JwtEvidence
     private function __construct() {}
 
     /**
-     * @param array<string, mixed> $custom
-     * @return array<string, mixed>
+     * @param array<array-key, mixed> $custom
+     * @return array<array-key, mixed>
      */
     public static function inject(
         array $custom,

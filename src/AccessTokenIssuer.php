@@ -18,7 +18,7 @@ final readonly class AccessTokenIssuer
         private ClockInterface $clock = new Clock(),
     ) {}
 
-    /** @param array<string, mixed> $custom */
+    /** @param array<array-key, mixed> $custom */
     public function issue(
         IdentityInterface $identity,
         AuthenticationEvidence $evidence,

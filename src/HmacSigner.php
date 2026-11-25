@@ -73,6 +73,7 @@ final readonly class HmacSigner implements SignerInterface
         }
 
         foreach ($claims->custom as $name => $value) {
+            $name = (string) $name;
             if ($name === '' || in_array($name, RegisteredClaims::ALL, true)) {
                 throw new \InvalidArgumentException(sprintf(
                     'Custom claim "%s" cannot replace a registered claim.',

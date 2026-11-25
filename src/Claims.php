@@ -9,7 +9,7 @@ use Lcobucci\JWT\Token\RegisteredClaims;
 
 final readonly class Claims
 {
-    /** @param array<string, mixed> $custom */
+    /** @param array<array-key, mixed> $custom */
     public function __construct(
         public string $subject,
         public int $issuedAt,
@@ -65,6 +65,7 @@ final readonly class Claims
         }
 
         foreach ($this->custom as $name => $_) {
+            $name = (string) $name;
             if (
                 $name === ''
                 || strlen($name) > 128
