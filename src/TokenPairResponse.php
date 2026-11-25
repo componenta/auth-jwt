@@ -27,12 +27,12 @@ final readonly class TokenPairResponse
         $refresh = $this->refreshTokens->issue($identity->uuid, $evidence);
 
         try {
-            $response->getBody()->write(json_encode([
+            TokenResponseBody::write($response, [
                 'access_token' => $accessToken,
                 'refresh_token' => $refresh->id,
                 'token_type' => 'Bearer',
                 'expires_in' => $this->config->accessTtl,
-            ], JSON_THROW_ON_ERROR));
+            ]);
 
             return TokenResponseHeaders::apply($response);
         } catch (\Throwable $exception) {
