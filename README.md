@@ -32,3 +32,6 @@ identity/guard check, is within the compensation scope. On exception, the
 unpublished successor is revoked. Revocation-store failure must be treated as
 an infrastructure error; it is not successful revocation. This does not change
 the lifetime/revocation semantics of already issued stateless access tokens.
+
+HMAC and RSA signer debug output includes the algorithm and a redaction marker;
+it does not traverse the internal signing configuration or expose key material.

@@ -48,6 +48,15 @@ final readonly class HmacSigner implements SignerInterface
         );
     }
 
+    /** @return array{algorithm: string, key: string} */
+    public function __debugInfo(): array
+    {
+        return [
+            'algorithm' => $this->configuration->signer()->algorithmId(),
+            'key' => '[REDACTED]',
+        ];
+    }
+
     #[\Override]
     public function sign(Claims $claims): string
     {

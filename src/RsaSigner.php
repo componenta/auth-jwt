@@ -56,6 +56,15 @@ final readonly class RsaSigner implements SignerInterface
         $this->canSign = $privateKey !== null;
     }
 
+    /** @return array{algorithm: string, key: string} */
+    public function __debugInfo(): array
+    {
+        return [
+            'algorithm' => $this->configuration->signer()->algorithmId(),
+            'key' => '[REDACTED]',
+        ];
+    }
+
     #[\Override]
     public function sign(Claims $claims): string
     {

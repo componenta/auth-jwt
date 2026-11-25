@@ -51,6 +51,23 @@ final class RsaSignerTest extends TestCase
         self::assertSame('value', $parsed->custom['42']);
     }
 
+    public function testRsaDebugOutputDoesNotExposePrivateKey(): void
+    {
+        [$public, $private] = self::keyPair(2048);
+        $signer = new RsaSigner($public, $private);
+
+        ob_start();
+        try {
+            var_dump($signer);
+            $debug = ob_get_contents();
+        } finally {
+            ob_end_clean();
+        }
+
+        self::assertIsString($debug);
+        self::assertStringNotContainsString($private, $debug);
+    }
+
     /** @return array{non-empty-string, non-empty-string} */
     private static function keyPair(int $bits): array
     {
