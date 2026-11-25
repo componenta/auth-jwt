@@ -9,6 +9,9 @@ use Lcobucci\JWT\Token\RegisteredClaims;
 
 final readonly class Claims
 {
+    /** @var array<array-key, mixed> */
+    public array $custom;
+
     /** @param array<array-key, mixed> $custom */
     public function __construct(
         public string $subject,
@@ -18,8 +21,14 @@ final readonly class Claims
         public string $audience,
         public string $type = 'at+jwt',
         public ?int $notBefore = null,
-        public array $custom = [],
+        array $custom = [],
     ) {
+        $snapshot = [];
+        foreach ($custom as $name => $value) {
+            $snapshot[$name] = $value;
+        }
+        $this->custom = $snapshot;
+
         foreach ([
             'subject' => $this->subject,
             'issuer' => $this->issuer,

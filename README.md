@@ -9,6 +9,11 @@ silently raise authentication assurance.
 
 Refresh-token reuse compromises and revokes the complete family.
 
+`Claims` owns its top-level custom-claim map, including directly referenced
+input entries. Custom claim names may be numeric strings; their PHP array-key
+representation is preserved across signing and parsing. Nested values are
+borrowed, so keep nested objects and references unchanged until signing.
+
 Refresh grants have two independent lifetimes: an inactivity-style per-token
 TTL and an absolute family TTL. Rotation may shorten a successor to the family
 deadline but never extends that deadline. This bounds how long an old

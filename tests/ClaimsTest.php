@@ -29,4 +29,20 @@ final class ClaimsTest extends TestCase
         self::assertNotNull($parsed);
         self::assertSame('value', $parsed->custom[$name]);
     }
+    public function testCustomClaimMapDetachesDirectCallerReferences(): void
+    {
+        $scope = 'read';
+        $claims = new Claims('subject', 1000, 1100, 'issuer', 'audience', custom: ['scope' => &$scope]);
+        $scope = 'write';
+        $exported = $claims->custom;
+        $exported['scope'] = 'admin';
+        $signer = new HmacSigner(str_repeat('test', 8));
+
+        $parsed = $signer->parse($signer->sign($claims));
+
+        self::assertSame('read', $claims->custom['scope']);
+        self::assertNotNull($parsed);
+        self::assertSame('read', $parsed->custom['scope']);
+    }
+
 }
