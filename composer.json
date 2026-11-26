@@ -4,10 +4,10 @@
     "type": "library",
     "license": "MIT",
     "require": {
-        "componenta/auth": "^3.0",
-        "componenta/auth-http": "^1.0",
-        "componenta/clock": "^1.1.0",
-        "componenta/identity": "^1.0.1",
+        "componenta/auth": "^4.0.0",
+        "componenta/auth-http": "^2.0.0",
+        "componenta/clock": "^1.2.0",
+        "componenta/identity": "^1.1.1",
         "cycle/database": "^2.22",
         "ext-openssl": "*",
         "lcobucci/jwt": "^5.5",
@@ -46,7 +46,8 @@
     "prefer-stable": true,
     "extra": {
         "branch-alias": {
-            "dev-main": "1.0.x-dev"
+            "dev-main": "1.0.x-dev",
+            "dev-release/auth-dependency-baseline-2026-11-26": "2.0.x-dev"
         }
     },
     "config": {
