@@ -22,6 +22,14 @@ TTL and an absolute family TTL. Rotation may shorten a successor to the family
 deadline but never extends that deadline. This bounds how long an old
 AuthenticationEvidence snapshot can be propagated without fresh authentication.
 
+## JWT header validation
+
+The built-in HMAC and RSA signers support no critical JOSE extensions. They
+reject any token containing a `crit` header, including malformed or empty
+values, as required when those extensions cannot be processed. Unknown
+noncritical extension headers remain permitted. See
+[RFC 7515, section 4.1.11](https://www.rfc-editor.org/rfc/rfc7515.html#section-4.1.11).
+
 ## Required admission checks
 
 `RefreshHandler` requires one `AuthenticationGuardInterface $guard` as its

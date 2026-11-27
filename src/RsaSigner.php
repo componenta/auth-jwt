@@ -131,6 +131,11 @@ final readonly class RsaSigner implements SignerInterface
                 return null;
             }
 
+            // No critical JOSE extensions are supported by this profile.
+            if ($parsed->headers()->has('crit')) {
+                return null;
+            }
+
             (new SignedWith(
                 $this->configuration->signer(),
                 $this->configuration->verificationKey(),

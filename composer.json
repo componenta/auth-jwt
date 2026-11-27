@@ -1,6 +1,6 @@
 {
     "name": "componenta/auth-jwt",
-    "description": "JWT access tokens and rotating refresh-token families for Componenta Auth 3",
+    "description": "JWT access tokens and rotating refresh-token families for Componenta Auth 4",
     "type": "library",
     "license": "MIT",
     "require": {
